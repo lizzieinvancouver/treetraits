@@ -1,0 +1,43 @@
+% ---------------------------------------------------- %
+% Tree traits 2015 manuscript
+% Preamble
+% ---------------------------------------------------- %
+\documentclass{article}
+\usepackage{textcomp}
+\usepackage{fontenc}
+\usepackage{graphicx}
+\usepackage{caption} % for figure captions
+\usepackage{gensymb} % for \degree
+\usepackage{placeins} % for \images
+\usepackage[margin=1in]{geometry} % to set margins
+\usepackage{setspace}
+\usepackage{lineno}
+\usepackage{cite}
+
+\doublespacing
+\renewcommand{\familydefault}{\sfdefault} % for nicer sans serif font
+\graphicspath{{images/}}	% Root directory of the figures
+\setlength{\parskip}{2 mm}
+
+\begin{document}
+
+\linenumbers
+\SweaveOpts{concordance=T} 
+
+\flushleft
+
+\textbf{\large{Tree traits across a latitudinal gradient in Northeastern North America reveal future of forests under climate change} \small{ ...I hope}}
+
+Flynn, Wolkovich
+
+\textit{The Arnold Arboretum of Harvard University}
+
+
+
+Clark 2016: Variation in traits at community level comes from trait syndromes, diversity of species possessing them, and environmental vaiaiton whic haffects both of these. Syndromes: vairation within and between species (Westoby 2002).
+
+Covariance in leaf N and P. 
+Low wood density, rapid growth (Chave 2009 Ecol Lett wood economics spectrum).
+
+
+\end{document}

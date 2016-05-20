@@ -29,7 +29,6 @@ d$wd <- d$Stem.mass/d$Stem.volume
 d$height = d$Height
 d$height = as.numeric(sub("<1",0.5, as.character(d$height)))
 
-
 # Plotting
 
 plot(sla ~ height, data = d)
@@ -67,5 +66,37 @@ xtable(data.frame(sort(rowSums(dt),T)))
 # Total samples per site
 xtable(data.frame(sort(colSums(dt),T)))
 
+<<<<<<< Updated upstream
 # Species per site
 xtable(apply(dt, 2, function(x) length(x[x>0])))
+=======
+## from buds
+
+(leafcount <- with(d, tapply(Leaf.area, list(Species, Site), function(x) length(x[!is.na(x)]))))
+
+rowSums(leafcount, na.rm=T)
+colSums(leafcount, na.rm=T)
+
+# <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
+# 3. Individual level
+# look at consistency of performance within individuals, across treatments, as measure of plasticity.
+
+# Is consistency related to earlier leafout?
+
+vars <- aggregate(lday ~ sp + site + ind + wd + sla + X.N + Pore.anatomy, FUN = function(x) sd(x, na.rm=T) 
+                  / mean(x, na.rm=T)
+                  , data = dxt)
+
+# remove extreme values 
+
+vars$day = lday.agg[match(vars$sp, lday.agg$sp),"lday"]
+vars$site = as.factor(vars$site); levels(vars$site) = c("HF","SH")
+summary(lmer(lday ~ day + (1|sp), data = vars))
+
+pdf(file.path(figpath, "indvar.pdf"), width = 5, height = 5)
+
+ggplot(vars, aes(day, lday, group = site)) + geom_point(aes(col=site)) + geom_smooth(method = "lm") + 
+  xlab("Day of leafout in Warm/Long") + ylab("CV of leafout across treatments within individuals") 
+
+dev.off();system(paste("open", file.path(figpath, "indvar.pdf"), "-a /Applications/Preview.app"))
+>>>>>>> Stashed changes
