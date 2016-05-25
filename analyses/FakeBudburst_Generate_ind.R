@@ -46,66 +46,23 @@ sitewarm.sd = 1
 sitephoto.sd = 1
 warmphoto.sd = 1
 mm <- model.matrix(~(site+warm+photo)^2, data.frame(site, warm, photo))
-colnames(mm)
 
-coeff <- c(1, sitediff, warmdiff, photodiff, 
-           sitewarm, sitephoto, 
-           warmphoto
-           )
-
-bb <- rnorm(n = length(warm), mean = mm %*% coeff, sd = 1) # should be able to do sd = mm %*% sd.coeff as well, with a different sd for each parameter.
-
-(fake <- data_frame(bb, site, warm, photo))
-
-##### Again, now with species now.
+#  with individuals
 
 baseinter = 35 # baseline intercept across all species 
 spint <- baseinter + c(1:nsp)-mean(1:nsp) # different intercepts by species
 
 fake <- vector()
 
-for(i in 1:nsp){ # loop over species, as these are the random effect modeled
-  
-  # Give species different difference values, drawn from normal. Could make dataframe of diffs and diff.sds, and use apply..
-  coeff <- c(spint[i], 
-             rnorm(1, sitediff, sitediff.sd),
-             rnorm(1, warmdiff, warmdiff.sd),
-             rnorm(1, photodiff, photodiff.sd), 
-             rnorm(1, sitewarm, sitewarm.sd), 
-             rnorm(1, sitephoto, sitephoto.sd),
-             rnorm(1, warmphoto, warmphoto.sd)
-             )
-  
-  bb <- rnorm(n = length(warm), mean = mm %*% coeff, sd = 0.1)
-  
-  fakex <- data.frame(bb, sp = i, site, warm, photo)
-      
-  fake <- rbind(fake, fakex)  
-  }
+for(i in 1:nsp){ # loop over species, as these are the random effect modeled. 
+  # Within species, have a loop for individuals
 
-summary(lm(bb ~ (site+warm+photo)^2, data = fake)) # sanity check 
-
-#summary(lmer(bb ~ (site|sp) + (warm|sp) + (photo|sp) + (chill1|sp) + (chill2|sp), data = fake)) # too hard for lmer.
-
-
-
-# and again, with individuals
-
-##### Again, now with species now.
-
-baseinter = 35 # baseline intercept across all species 
-spint <- baseinter + c(1:nsp)-mean(1:nsp) # different intercepts by species
-
-fake <- vector()
-
-for(i in 1:nsp){ # loop over species, as these are the random effect modeled. Within species, have a loop for individuals
-  
-  
   indint <- spint[i] + 1:nind-mean(1:nind)
   
+  for(j in 1:nind){
   # Give species different difference values, drawn from normal.
   
-  coeff <- c(spint[i], 
+  coeff <- c(indint[j], 
              rnorm(1, sitediff, sitediff.sd),
              rnorm(1, warmdiff, warmdiff.sd),
              rnorm(1, photodiff, photodiff.sd), 
@@ -116,26 +73,17 @@ for(i in 1:nsp){ # loop over species, as these are the random effect modeled. Wi
   
   bb <- rnorm(n = length(warm), mean = mm %*% coeff, sd = 0.1)
   
-  fakex <- data.frame(bb, sp = i, site, warm, photo)
+  fakex <- data.frame(bb, sp = i, ind = paste(i, j, sep="_"),
+                      site, warm, photo)
   
   fake <- rbind(fake, fakex)  
-}
+  }
+  }
 
 summary(lm(bb ~ (site+warm+photo)^2, data = fake)) # sanity check 
 
-save(list=c("fake"), file = "Fake Budburst.RData")
+save(list=c("fake"), file = "Fake_Budburst_ind.RData")
 
-
-
-
-
-
-
-
-
-
-
-save(list=c("fake"), file = "Fake Budburst.RData")
 
 
 
