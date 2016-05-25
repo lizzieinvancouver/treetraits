@@ -3,12 +3,12 @@ library(dplyr)
 
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 # Set up: same as experiment, with two sites, 28 species, two levels each of warming and photoperiod, and three levels of chilling. 2016-04-01 adding interactions. This ends up generating expected differences, but variation in effect sizes across species is minimal currently.
-# 2016-05-16 simplifying a lot, but adding individuals
+# 2016-05-16 simplifying a lot, but adding individuals. Removed chilling and interactions for now.
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
 nsite = 2
-nsp = 28
-nind = 12
+nsp = 20
+nind = 10
   
 nwarm = 2
 nphoto = 2
@@ -45,7 +45,7 @@ photodiff.sd = 1
 sitewarm.sd = 1
 sitephoto.sd = 1
 warmphoto.sd = 1
-mm <- model.matrix(~(site+warm+photo)^2, data.frame(site, warm, photo))
+mm <- model.matrix(~(site+warm+photo)^2, data.frame(warm, photo))
 
 #  with individuals
 

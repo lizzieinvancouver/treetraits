@@ -13,52 +13,42 @@ options(mc.cores = parallel::detectCores())
 
 load("Fake_Budburst_ind.RData") # not ind level, just testing
 
-# load("Stan Output 2016-04-04 Fake Interax.RData")
-# fakeout <- dir()[grep("Stan Output", dir())[is.na(match(grep("Stan Output", dir()), grep("Fake", dir())))]]
-# load(sort(realout, T)[1])
+# load("Stan Output 2016-05-25 Fake ind test 2.RData")
+# fakeout <- dir()[grep("Stan Output", dir())]
+# load(sort(fakeout, T)[1])
 # ls() 
 
+#lme1 <- lmer(bb ~ site + warm + photo + (warm|sp) + (photo|sp), data = fake)
+
+#lme2 <- lmer(bb ~ site + warm + photo + (warm|sp/ind) + (photo|sp/ind), data = fake)
+
 ## 
-splookup <- unique(fake[c("ind","sp")])[,"sp"]
+splookup <- unique(fake[c("ind","sp")])[,"sp"] #200 long = 10 ind x 20 sp 
 
 # To Stan!
 datalist.f <- list(lday = fake$bb, # budburst as respose 
                    warm = as.numeric(fake$warm), 
-                   site = as.numeric(fake$site), 
+                   site = as.numeric(fake$site),
                    sp = as.numeric(fake$sp), 
                    ind = as.numeric(fake$ind),
                    photo = as.numeric(fake$photo), 
                    N = nrow(fake), 
                    splookup = splookup,
-                   n_site = length(unique(fake$site)), 
                    n_sp = length(unique(fake$sp)),
                    n_ind = length(unique(fake$ind))
-                  
                    )
 
-doym.f <- stan('stan/lday_ind2.stan', data = datalist.f, 
+doym.f <- stan('stan/lday_ind3.stan', data = datalist.f, 
                iter = 5005
 #               , control = list(adapt_delta = 0.9,
 #                               max_treedepth = 15)
                 ) 
 
-# lday_site_chill: < 120 seconds per chain, very fast
-# lday_site_sp_chill: much slower.   
-#doym.f <- stan('stan/lday0.stan', data = datalist.f, iter = 4000, chains = 4) 
-
-
-
-sumer <- summary(doym.f)$summary
-sumer[grep("mu_", rownames(sumer)),] # effects are perfectly captured now.
-
-pairs(doym.f, pars = names(doym.f)[grep("mu_", names(doym.f))])
+savestan("Fake ind interax 1")
 
 ssm.f <- as.shinystan(doym.f)
 launch_shinystan(ssm.f) 
 
-#setwd("~/Dropbox")
-
-savestan("Fake ind test")
 
 #setwd("~/Documents/git/buds/analyses")
 
@@ -72,54 +62,21 @@ if(!exists('doym.f')){
 
 sf <- summary(doym.f)$summary
 
-plotlet("b_warm", "b_photo", 
+plotlet("b_warm_sp", "b_photo_sp", 
         #xlab = "Advance due to 30d 4° chilling", 
         #ylab = "Advance due to 30d 1.5° chilling", 
         dat = sf)
 
-plotlet("b_inter_wc2", "b_inter_wc1", 
+plotlet("b_warm_sp_ind", "b_photo_sp_ind", 
         #xlab = "Advance due to 30d 4° chilling", 
         #ylab = "Advance due to 30d 1.5° chilling", 
         dat = sf)
 
 
-di <- sf[grep("mu_b_inter", rownames(sf)),]
-
-plot(seq(min(di[,"mean"]-di[,"sd"]*1.5), max(di[,"mean"]+di[,"sd"]*1.5), length.out = nrow(di)),
-     1:nrow(di), type ="n")
-
-
-# # now with fixed site and fixed sp
+# di <- sf[grep("mu_b_inter", rownames(sf)),]
 # 
-# datalist.f <- list(lday = fake$bb, # budburst as respose 
-#                    warm = as.numeric(fake$warm), 
-#                    site = as.numeric(fake$site), 
-#                    sp = as.numeric(fake$sp), 
-#                    photo = as.numeric(fake$photo), 
-#                    chill = as.numeric(fake$chill), 
-#                    N = nrow(fake), 
-#                    n_site = length(unique(fake$site)), 
-#                    n_sp = length(unique(fake$sp))
-# )
-# 
-# doym.f2 <- stan('stan/lday0_fixedsite_fixedsp.stan', data = datalist.f, iter = 4000, chains = 4) 
-# 
-# ssm.f <- as.shinystan(doym.f2)
-# #launch_shinystan(ssm.f2) 
-# 
-# (sumer <- summary(doym.f)$summary)
-# 
-# setwd("~/Dropbox")
-# 
-# savestan()
-# 
-# setwd("~/Documents/git/buds/analyses")
-# 
-# # Tips for speeding up, from google groups
-# set_cppo(mode = "fast")
-# # For finding part of code that is slow
-# dir(tempdir())
-
+# plot(seq(min(di[,"mean"]-di[,"sd"]*1.5), max(di[,"mean"]+di[,"sd"]*1.5), length.out = nrow(di)),
+#      1:nrow(di), type ="n")
 
 
 plotlet <- function(x, y, xlab=NULL, ylab=NULL, dat, groups = NULL){

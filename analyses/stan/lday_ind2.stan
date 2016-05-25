@@ -9,9 +9,9 @@
 
 
 data {
-  int<lower=0> N;
-  int<lower=0> n_ind;
-  int<lower=0> n_sp;
+  int<lower=1> N;
+  int<lower=1> n_ind;
+  int<lower=1> n_sp;
   int<lower=1, upper=n_sp> sp[N];
   int<lower=1, upper=n_ind> ind[N]; // this serves also as individual-level cluster id
   vector[N] lday; // response
@@ -35,9 +35,11 @@ parameters {
   real mu_b_warm_sp_ind[n_ind]; 
   real mu_b_photo_sp_ind[n_ind];
 
+  real<lower=0> sigma_a_sp; 
   real<lower=0> sigma_b_warm_sp; 
   real<lower=0> sigma_b_photo_sp;
 
+  real<lower=0> sigma_a_sp_ind; 
   real<lower=0> sigma_b_warm_sp_ind; 
   real<lower=0> sigma_b_photo_sp_ind;
   
@@ -70,7 +72,7 @@ transformed parameters {
 	for (j in 1:n_ind){
 		a_sp_ind[j] <- a_sp[splookup[j]] + mu_a_sp_ind[j];
 		b_warm_sp_ind[j] <- b_warm_sp[splookup[j]] + mu_b_warm_sp_ind[j];
-		b_photo_sp_ind[j] <- b_photo_sp[splookup[j]] + mu_b_photo_sp_ind[j]	;
+		b_photo_sp_ind[j] <- b_photo_sp[splookup[j]] + mu_b_photo_sp_ind[j];
 	
 	}
 	
@@ -85,29 +87,21 @@ transformed parameters {
 
 model {
 
-	mu_a_sp ~ normal(0, 35);
-	mu_b_warm_sp ~ normal(0, 35); // 100 = 3 months on either side. Narrow down to 35
-	mu_b_photo_sp ~ normal(0, 35);
+	mu_a_sp ~ normal(0, sigma_a_sp);
+	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 100 = 3 months on either side. Narrow down to 35
+	mu_b_photo_sp ~ normal(0, sigma_b_photo_sp);
 
-	mu_a_sp_ind ~ normal(0,10);
-	mu_b_warm_sp_ind ~ normal(0, 10); // 10 d on either side at individual level
-	mu_b_photo_sp_ind ~ normal(0, 10);
+	mu_a_sp_ind ~ normal(0, sigma_a_sp_ind);
+	mu_b_warm_sp_ind ~ normal(0, sigma_b_warm_sp_ind); // 10 d on either side at individual level
+	mu_b_photo_sp_ind ~ normal(0, sigma_b_photo_sp_ind);
 
+	sigma_a_sp ~ normal(0, 20); // Start big at 10, go smaller if introduces problems
+	sigma_b_warm_sp ~ normal(0, 20); // 
+	sigma_b_photo_sp ~ normal(0, 20); 
 
-	sigma_b_warm_sp ~ normal(0, 10); // Start big at 10, go smaller if introduces problems
-	sigma_b_photo_sp ~ normal(0, 10); 
-	
+	sigma_a_sp_ind ~ normal(0, 10); // Start big at 10, go smaller if introduces problems	
 	sigma_b_warm_sp_ind ~ normal(0, 10); // Reduce sd of sigma at individual level? 
 	sigma_b_photo_sp_ind ~ normal(0, 10); 
-
-	
-	b_warm_sp ~ normal(mu_b_warm_sp, sigma_b_warm_sp);
-	b_photo_sp ~ normal(mu_b_photo_sp, sigma_b_photo_sp);
-
-	b_warm_sp_ind ~ normal(mu_b_warm_sp_ind, sigma_b_warm_sp_ind);
-	b_photo_sp_ind ~ normal(mu_b_photo_sp_ind, sigma_b_photo_sp_ind);
-
-
 
 	lday ~ normal(y_hat, sigma_y);
 }
