@@ -39,7 +39,7 @@ datalist.f <- list(lday = fake$bb, # budburst as respose
                    )
 
 doym.f <- stan('stan/lday_ind3.stan', data = datalist.f, 
-               iter = 5005
+               iter = 2002
 #               , control = list(adapt_delta = 0.9,
 #                               max_treedepth = 15)
                 ) 
@@ -62,12 +62,21 @@ if(!exists('doym.f')){
 
 sf <- summary(doym.f)$summary
 
+plot(sf['b_warm_0','mean'], sf['b_photo_0','mean'])
+
 plotlet("b_warm_sp", "b_photo_sp", 
+        xlim = c(-24, -22),
+        ylim = c(-18, -17),
         #xlab = "Advance due to 30d 4° chilling", 
         #ylab = "Advance due to 30d 1.5° chilling", 
         dat = sf)
 
+hist(sf[grep("^b_warm_sp\\[", rownames(sf)),'mean'], breaks = 50)
+hist(sf[grep("^b_warm_sp_ind\\[", rownames(sf)),'mean'], breaks = 50)
+
 plotlet("b_warm_sp_ind", "b_photo_sp_ind", 
+        xlim = c(-30, -20),
+        ylim = c(-20, -15),
         #xlab = "Advance due to 30d 4° chilling", 
         #ylab = "Advance due to 30d 1.5° chilling", 
         dat = sf)
@@ -79,48 +88,42 @@ plotlet("b_warm_sp_ind", "b_photo_sp_ind",
 #      1:nrow(di), type ="n")
 
 
-plotlet <- function(x, y, xlab=NULL, ylab=NULL, dat, groups = NULL){
-  
-  if(is.null(xlab)) xlab = x
-  if(is.null(ylab)) ylab = y
-  
-  minmax = range(c(dat[grep(paste(x,"\\[",sep=""), rownames(dat)),1], dat[grep(paste(y,"\\[",sep=""), rownames(dat)),1]))
-  
+plotlet <- function(x, y, xlab=NULL, ylab=NULL, dat, groups = NULL, ...){
+  if(is.null(xlab)) xlab = x; if(is.null(ylab)) ylab = y
   if(is.null(groups)) { col.pch = "black"; col.lines = "grey50" }
   else {
-    colz = c("midnightblue", "darkgreen")
+    colz = c("brown", "blue3")
     ccolz = rep(colz[1], length(groups))
     ccolz[groups == 2] = colz[2]
     col.pch = ccolz
     col.lines = alpha(ccolz, 0.4)
   }
   
-    plot(
-    dat[grep(paste(x,"\\[",sep=""), rownames(dat)),1],
-    dat[grep(paste(y,"\\[",sep=""), rownames(dat)),1],
+  plot(
+    dat[grep(paste("^", x,"\\[",sep=""), rownames(dat)),1],
+    dat[grep(paste("^", y,"\\[",sep=""), rownames(dat)),1],
     pch = "+",
-    xlim = c(floor(minmax)[1], ceiling(minmax)[2]),
-    ylim = c(floor(minmax)[1], ceiling(minmax)[2]),
     ylab = ylab,
     xlab = xlab,
-    col = col.pch
+    col = col.pch,
+    ...
   )
   
   abline(h=0, lty = 3, col = "grey60")
   abline(v=0, lty = 3, col = "grey60")
   
   arrows(
-    dat[grep(paste(x,"\\[",sep=""), rownames(dat)),"mean"],
-    dat[grep(paste(y,"\\[",sep=""), rownames(dat)),"25%"],
-    dat[grep(paste(x,"\\[",sep=""), rownames(dat)),"mean"],
-    dat[grep(paste(y,"\\[",sep=""), rownames(dat)),"75%"],
+    dat[grep(paste("^", x,"\\[",sep=""), rownames(dat)),"mean"],
+    dat[grep(paste("^", y,"\\[",sep=""), rownames(dat)),"25%"],
+    dat[grep(paste("^", x,"\\[",sep=""), rownames(dat)),"mean"],
+    dat[grep(paste("^", y,"\\[",sep=""), rownames(dat)),"75%"],
     length = 0, col = col.lines)
   
   arrows(
-    dat[grep(paste(x,"\\[",sep=""), rownames(dat)),"25%"],
-    dat[grep(paste(y,"\\[",sep=""), rownames(dat)),"mean"],
-    dat[grep(paste(x,"\\[",sep=""), rownames(dat)),"75%"],
-    dat[grep(paste(y,"\\[",sep=""), rownames(dat)),"mean"],
+    dat[grep(paste("^", x,"\\[",sep=""), rownames(dat)),"25%"],
+    dat[grep(paste("^", y,"\\[",sep=""), rownames(dat)),"mean"],
+    dat[grep(paste("^", x,"\\[",sep=""), rownames(dat)),"75%"],
+    dat[grep(paste("^", y,"\\[",sep=""), rownames(dat)),"mean"],
     length = 0, col = col.lines)
   
 
