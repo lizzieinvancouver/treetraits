@@ -5,47 +5,34 @@
 # 2016-05-16 simplifying a lot, but adding individuals. Removed chilling and interactions for now.
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
-nsite = 2
 nsp = 20
 nind = 10
   
 nwarm = 2
 nphoto = 2
-#nchill = 3
 
 rep = 1 # only 1 individual within each combination of treatments. 
 
-(ntot = nsite*nwarm*nphoto) # 8 rows. But will be looping over individuals and species below
+(ntot = nwarm*nphoto) # 8 rows. But will be looping over individuals and species below
 
 # Build up the data frame
-site = gl(nsite, rep, length = ntot)
 
-warm = gl(nwarm, rep*nsite, length = ntot)
-photo = gl(nphoto, rep*nsite*nwarm, length = ntot)
+warm = gl(nwarm, rep, length = ntot)
+photo = gl(nphoto, rep*nwarm, length = ntot)
 
 treatcombo = paste(warm, photo, sep = "_")
 
-(d <- data.frame(site, warm, photo, treatcombo))
+(d <- data.frame(warm, photo, treatcombo))
 
 ###### Set up differences for each level
-sitediff = 2 
 warmdiff = -20 # days earlier from 1 to 2
 photodiff = -14
 
-# interactions. 9 two-way interactions
-sitewarm = 0
-sitephoto = 0
-warmphoto = 3.5 # positive 3.5. So at the warm level, the effect of longer days is muted by 3.5 days.
-
 ######## SD for each treatment
-sitediff.sd = 1.5 
 warmdiff.sd = 1 
 photodiff.sd = 1
-sitewarm.sd = 1
-sitephoto.sd = 1
-warmphoto.sd = 1
 
-mm <- model.matrix(~(site+warm+photo)^2, data.frame(warm, photo))
+mm <- model.matrix(~(warm+photo), data.frame(warm, photo))
 
 #  with individuals
 
@@ -63,26 +50,22 @@ for(i in 1:nsp){ # loop over species
   # Give species different difference values, drawn from normal.
   
   coeff <- c(indint[j], 
-             rnorm(1, sitediff, sitediff.sd),
              rnorm(1, warmdiff, warmdiff.sd),
-             rnorm(1, photodiff, photodiff.sd), 
-             rnorm(1, sitewarm, sitewarm.sd), 
-             rnorm(1, sitephoto, sitephoto.sd),
-             rnorm(1, warmphoto, warmphoto.sd)
+             rnorm(1, photodiff, photodiff.sd)
   )
   
   bb <- rnorm(n = length(warm), mean = mm %*% coeff, sd = 0.1)
   
   fakex <- data.frame(bb, sp = i, ind = paste(i, j, sep="_"),
-                      site, warm, photo)
+                      warm, photo)
   
   fake <- rbind(fake, fakex)  
   }
   }
 
-summary(lm(bb ~ (site+warm+photo)^2, data = fake)) # sanity check 
+summary(lm(bb ~ (warm+photo)^2, data = fake)) # sanity check 
 
-save(list=c("fake"), file = "Fake_Budburst_ind.RData")
+save(list=c("fake"), file = "Fake_Budburst_ind2.RData")
 
 
 

@@ -4,9 +4,8 @@
 // http://rstudio-pubs-static.s3.amazonaws.com/64315_bc3a395edd104095a8384db8d9952f43.html
 // Difference in this model is that we are not just doing "beta_0" intercept as in the other model, but also slopes. I call intercept "a" and slopes "b".
 // Top level: Species
-// 2nd level: Individuals (6 per species per site, which is currently being ignored
-// 3rd level: Cuttings (4-12 per individual, spread out across different treatments)
-
+// 2nd level: Individuals (10 per species per site; site not used in this version).
+// 3rd level: Cuttings (8 per individual, spread out across different treatments)
 
 data {
   int<lower=1> N;
@@ -43,7 +42,7 @@ parameters {
   real<lower=0> sigma_b_warm_sp_ind; 
   real<lower=0> sigma_b_photo_sp_ind;
   
-  real<lower=0> sigma_y; // this only gets used in model block
+  real<lower=0> sigma_y; 
   }
 
 
@@ -76,31 +75,31 @@ transformed parameters {
 	
 	}
 	
-	// cutting level. note that "warm" and "photo" are vectors of data, not parameters.
+	// cutting (branch) level. 
 	for(i in 1:N){
 
-		y_hat[i] <- a_sp_ind[ind[i]] + b_warm_sp_ind[ind[i]] * warm[i] + b_photo_sp_ind[ind[i]] * photo[i];
-		
+		y_hat[i] <- a_sp_ind[ind[i]] + 
+					b_warm_sp_ind[ind[i]] * warm[i] + 
+					b_photo_sp_ind[ind[i]] * photo[i]
+					;
 		}
-	
 }
 
 model {
-
 	mu_a_sp ~ normal(0, sigma_a_sp);
 	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 100 = 3 months on either side. Narrow down to 35
 	mu_b_photo_sp ~ normal(0, sigma_b_photo_sp);
 
 	mu_a_sp_ind ~ normal(0, sigma_a_sp_ind);
-	mu_b_warm_sp_ind ~ normal(0, sigma_b_warm_sp_ind); // 10 d on either side at individual level
+	mu_b_warm_sp_ind ~ normal(0, sigma_b_warm_sp_ind); // ~ 10 d on either side at individual level
 	mu_b_photo_sp_ind ~ normal(0, sigma_b_photo_sp_ind);
 
-	sigma_a_sp ~ normal(0, 20); // Start big at 10, go smaller if introduces problems
-	sigma_b_warm_sp ~ normal(0, 20); // 
+	sigma_a_sp ~ normal(0, 20); 
+	sigma_b_warm_sp ~ normal(0, 20); 
 	sigma_b_photo_sp ~ normal(0, 20); 
 
-	sigma_a_sp_ind ~ normal(0, 10); // Start big at 10, go smaller if introduces problems	
-	sigma_b_warm_sp_ind ~ normal(0, 10); // Reduce sd of sigma at individual level? 
+	sigma_a_sp_ind ~ normal(0, 10); 
+	sigma_b_warm_sp_ind ~ normal(0, 10); 
 	sigma_b_photo_sp_ind ~ normal(0, 10); 
 
 	lday ~ normal(y_hat, sigma_y);

@@ -38,8 +38,6 @@ if(forlatex) figpath = "../docs/ms/images" else figpath = "graphs"
 
 # Prep 
 
-dx$spn <- as.numeric(dx$sp)
-dx$ind <- as.numeric(dx$ind)
 
 levels(dx$warm) = c(0,1); levels(dx$photo) = c(0, 1); levels(dx$site) = 1:2; 
 levels(dx$chill) = 1:3
@@ -54,10 +52,15 @@ dx <- dx[!is.na(dx$site),]
 dx$chill1 = ifelse(dx$chill == 2, 1, 0) 
 dx$chill2 = ifelse(dx$chill == 3, 1, 0) 
 
-with(dx, table(chill1, chill2)) # all three levels in here
+# with(dx, table(chill1, chill2)) # all three levels in here
 
 dxb <- dx[!is.na(dx$bday),]
+dxb$spn <- as.numeric(dxb$sp)
+dxb$ind <- as.numeric(as.factor(as.character(dxb$ind)))
+
 dxl <- dx[!is.na(dx$lday),]
+dxl$spn <- as.numeric(dxl$sp)
+dxl$ind <- as.numeric(as.factor(as.character(dxl$ind)))
 
 # with(dxb, table(chill1, chill2)) # reductions due to nonbudburst
 # with(dxl, table(chill1, chill2)) # reductions due to nonleafouts
@@ -133,22 +136,22 @@ treeshrub = as.numeric(treeshrub)
 if(runstan){
   splookup <- unique(dxb[c("ind","spn")])[,"spn"] #271 long for budburst
   
-  datalist.b <- list(lday = dxb$bday, # budburst as response 
-                     warm = dxb$warm, 
-                     site = dxb$site, 
-                     sp = dxb$spn, 
-                     ind = dxb$ind,
-                     photo = dxb$photo, 
-#                      chill1 = dxb$chill1,
-#                      chill2 = dxb$chill2,
+  datalist.b <- with(dxb, list(lday = bday, # budburst as response 
+                     warm = warm, 
+                     site = site, 
+                     sp = spn, 
+                     ind = ind,
+                     photo = photo, 
+#                      chill1 = chill1,
+#                      chill2 = chill2,
                      N = nrow(dxb), 
                      splookup = splookup,
-                     n_site = length(unique(dxb$site)), 
-                     n_sp = length(unique(dxb$spn)),
-                     n_ind = length(unique(dxb$ind))
-  )
+                     n_site = length(unique(site)), 
+                     n_sp = length(unique(spn)),
+                     n_ind = length(unique(ind))
+  ))
 
-    doym.b <- stan('stan/lday_ind2.stan', 
+    doym.b <- stan('stan/lday_ind3.stan', 
                  data = datalist.b, iter = 2002, chains = 4
 #                  , control = list(adapt_delta = 0.9,
 #                                 max_treedepth = 15)
@@ -167,52 +170,57 @@ if(runstan){
 col4table <- c("mean","sd","25%","50%","75%","Rhat")
 
 # manually to get right order
-mu_params <- c("mu_b_warm","mu_b_photo","mu_b_chill1","mu_b_chill2","mu_b_site",
-               "mu_b_inter_wp",
-               "mu_b_inter_wc1","mu_b_inter_wc2",
-               "mu_b_inter_pc1","mu_b_inter_pc2",
-               "mu_b_inter_ws","mu_b_inter_ps",
-               "mu_b_inter_sc1","mu_b_inter_sc2")
+params <- c("b_warm_0","b_photo_0",
+            #"b_chill1_0","b_chill2_0",
+            "b_site_0",
+               "b_inter_wp_0",
+#                "b_inter_wc1_0","b_inter_wc2_0",
+#                "b_inter_pc1_0","b_inter_pc2_0",
+               "b_inter_ws_0","b_inter_ps_0"
+               # "b_inter_sc1_0","b_inter_sc2"
+)
 
-meanzb <- sumerb[mu_params,col4table]
+meanzb <- sumerb[params,col4table]
 
 rownames(meanzb) = c("Temperature",
                     "Photoperiod",
-                    "Chilling 4°",
-                    "Chilling 1.5°C",
+#                     "Chilling 4°",
+#                     "Chilling 1.5°C",
                     "Site",
                     "Temperature x Photoperiod",
-                    "Temperature x Chilling 4°C",
-                    "Temperature x Chilling 1.5°C",
-                    "Photoperiod x Chilling 4°C",
-                    "Photoperiod x Chilling 1.5°C",
+#                     "Temperature x Chilling 4°C",
+#                     "Temperature x Chilling 1.5°C",
+#                     "Photoperiod x Chilling 4°C",
+#                     "Photoperiod x Chilling 1.5°C",
                     "Temperature x Site",
-                    "Photoperiod x Site",
-                    "Site x Chilling 4°C",
-                    "Site x Chilling 1.5°C"
+                    "Photoperiod x Site"
+# ,
+#                     "Site x Chilling 4°C",
+#                     "Site x Chilling 1.5°C"
                     )
 
 if(runstan){
   splookup <- unique(dxl[c("ind","spn")])[,"spn"] #265 long
   
-  datalist.l <- list(lday = dxl$bday, # budburst as response 
-                     warm = dxl$warm, 
-                     # site = dxl$site, 
-                     sp = dxl$spn, 
-                     photo = dxl$photo, 
-#                      chill1 = dxl$chill1,
-#                      chill2 = dxl$chill2,
-                     N = nrow(dxl), 
-                    splookup = splookup,
-                     n_site = length(unique(dxl$site)), 
-                     n_sp = length(unique(dxl$sp)),
-                     n_ind = length(unique(dxl$ind))
-  )
+  datalist.l <- with(dxl, list(lday = lday, # budburst as response 
+                               warm = warm, 
+                               site = site, 
+                               sp = spn, 
+                               ind = ind,
+                               photo = photo, 
+                               #                      chill1 = chill1,
+                               #                      chill2 = chill2,
+                               N = nrow(dxl), 
+                               splookup = splookup,
+                               n_site = length(unique(site)), 
+                               n_sp = length(unique(spn)),
+                               n_ind = length(unique(ind))
+  ))
   
   
   
   doym.l <- stan('stan/lday_ind2.stan', 
-                 data = datalist.l, iter = 2002, chains = 4
+                 data = datalist.l, iter = 5005, chains = 4
                  #                  , control = list(adapt_delta = 0.9,
                  #                                 max_treedepth = 15)
   ) 

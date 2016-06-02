@@ -111,7 +111,6 @@ transformed parameters {
 		}
 	
 	// individual level. again both random intercepts and slopes
-	
 	for (j in 1:n_ind){
 		a_sp_ind[j] <- a_sp[splookup[j]] + mu_a_sp_ind[j];
 		b_warm_sp_ind[j] <- b_warm_sp[splookup[j]] + mu_b_warm_sp_ind[j];
@@ -123,20 +122,18 @@ transformed parameters {
 
 	}
 	
-	// cutting level. note that "warm" and "photo" are vectors of data, not parameters.
+	// cutting (branch) level. 
 	for(i in 1:N){
 
 		y_hat[i] <- a_sp_ind[ind[i]] + 
 					b_warm_sp_ind[ind[i]] * warm[i] + 
 					b_photo_sp_ind[ind[i]] * photo[i]+
-					b_site_sp_ind[ind[i]] * site[i]+
+					b_site_sp_ind[ind[i]] * site[i] +
 					b_inter_wp_sp_ind[ind[i]] * inter_wp[i]+
 					b_inter_ws_sp_ind[ind[i]] * inter_ws[i]+
 					b_inter_ps_sp_ind[ind[i]] * inter_ps[i]
 					;
-		
 		}
-	
 }
 
 model {

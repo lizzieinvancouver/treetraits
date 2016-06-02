@@ -1,5 +1,5 @@
 # Fake data testing of pheno budburst experiment at individual level
-dostan = FALSE
+dostan = T
 
 library(rstan)
 library(ggplot2)
@@ -12,11 +12,11 @@ source('stan/savestan.R')
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-load("Fake_Budburst_ind.RData") # not ind level, just testing
+load("Fake_Budburst_ind2.RData") # not ind level, just testing
 
 splookup <- unique(fake[c("ind","sp")])[,"sp"] #200 long = 10 ind x 20 sp 
 
-# To Stan!
+# To Stan
 
 datalist.f <- with(fake, 
  list(lday = bb, # budburst as respose 
@@ -90,12 +90,10 @@ plotlet("mu_b_warm_sp_ind", "mu_b_photo_sp_ind",
 ###### Posterior predictive checks
 # pull out coefficients at each level
 
-nsite = length(unique(fake$site)) # 2 sites
 nsp = length(unique(fake$sp)) # 20 species
-ntreat = with(fake, length(unique(paste(site, warm, photo))))
+ntreat = with(fake, length(unique(paste(warm, photo))))
 # all(tapply(fake$ind, fake$sp, length) == 80) # make sure all are the same
 nind = mean(tapply(fake$ind, fake$sp, length) / ntreat)  #10
-
 
 nwarm = length(unique(fake$warm)) # 2 temperature treatments
 nphoto = length(unique(fake$photo)) # 2 photoperiod treatments
@@ -103,40 +101,29 @@ nphoto = length(unique(fake$photo)) # 2 photoperiod treatments
 
 rep = 1 # only 1 cutting from an individual within each combination of treatments. 
 
-(ntot = nsite*nwarm*nphoto) # 8 rows. But will be looping over individuals and species below
+(ntot = nwarm*nphoto) # 4 rows. But will be looping over individuals and species below
 
 # Build up the data frame
-site = gl(nsite, rep, length = ntot)
 
-warm = gl(nwarm, rep*nsite, length = ntot)
-photo = gl(nphoto, rep*nsite*nwarm, length = ntot)
+warm = gl(nwarm, rep, length = ntot)
+photo = gl(nphoto, rep*nwarm, length = ntot)
 
 treatcombo = paste(warm, photo, sep = "_")
 
-(d <- data.frame(site, warm, photo, treatcombo))
+(d <- data.frame(warm, photo, treatcombo))
 
 # Extracting fitted values from the stan fit object
-sitediff = sf[grep("^b_site_0", rownames(sf)),'mean']
 warmdiff = sf[grep("^b_warm_0", rownames(sf)),'mean']
 photodiff = sf[grep("^b_photo_0", rownames(sf)),'mean']
 
-# interactions. 9 two-way interactions
-sitewarm = sf[grep("^b_inter_ws_0", rownames(sf)),'mean']
-sitephoto = sf[grep("^b_inter_ps_0", rownames(sf)),'mean']
-warmphoto = sf[grep("^b_inter_wp_0", rownames(sf)),'mean']
-
 ######## SD for each treatment
-sitediff.sd = sf[grep("^b_site_0", rownames(sf)),'sd'] 
 warmdiff.sd = sf[grep("^b_warm_0", rownames(sf)),'sd']  
 photodiff.sd = sf[grep("^b_photo_0", rownames(sf)),'sd'] 
-sitewarm.sd = sf[grep("^b_inter_ws_0", rownames(sf)),'sd'] 
-sitephoto.sd = sf[grep("^b_inter_ps_0", rownames(sf)),'sd'] 
-warmphoto.sd = sf[grep("^b_inter_wp_0", rownames(sf)),'sd'] 
 
-mm <- model.matrix(~(site+warm+photo)^2, data.frame(warm, photo))
+mm <- model.matrix(~(warm+photo), data.frame(warm, photo))
 
 ############ !
-spint <- sf[grep("^a_sp\\[", rownames(sf)),'mean'] # Was centered on 35 in fake data, why now 70??
+spint <- sf[grep("^a_sp\\[", rownames(sf)),'mean'] # Was centered on 35 in fake data, why now 65??
 
 poster <- vector() # to hold the posterior predictive checks
 
@@ -147,12 +134,8 @@ for(i in 1:nsp){ # loop over species, as these are the random effect modeled.
   
   coeff <- data.frame(
       sf[rownames(sf) %in% paste("a_sp_ind[", indx, "]", sep = ""),'mean'],
-      sf[rownames(sf) %in% paste("b_site_sp_ind[", indx, "]", sep = ""),'mean'],
       sf[rownames(sf) %in% paste("b_warm_sp_ind[", indx, "]", sep = ""),'mean'],
-      sf[rownames(sf) %in% paste("b_photo_sp_ind[", indx, "]", sep = ""),'mean'],
-      sf[rownames(sf) %in% paste("b_inter_ws_sp_ind[", indx, "]", sep = ""),'mean'],
-      sf[rownames(sf) %in% paste("b_inter_ps_sp_ind[", indx, "]", sep = ""),'mean'],
-      sf[rownames(sf) %in% paste("b_inter_wp_sp_ind[", indx, "]", sep = ""),'mean']
+      sf[rownames(sf) %in% paste("b_photo_sp_ind[", indx, "]", sep = ""),'mean']
   )
     
     for(j in 1:nind){ # simulate data for each individual, using these coefficients
@@ -161,12 +144,11 @@ for(i in 1:nsp){ # loop over species, as these are the random effect modeled.
     
       
       posterx <- data.frame(bb, sp = i, ind = paste(i, j, sep="_"),
-                        site, warm, photo)
+                        warm, photo)
     
     poster <- rbind(poster, posterx)  
   }
 }
-
 
 plot(fake$bb, poster$bb,
      xlab = "Simulated data",
