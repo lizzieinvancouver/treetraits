@@ -13,7 +13,7 @@ nphoto = 2
 
 rep = 1 # only 1 individual within each combination of treatments. 
 
-(ntot = nwarm*nphoto) # 8 rows. But will be looping over individuals and species below
+(ntot = nwarm*nphoto) # 4 rows. Will be looping over individuals and species below
 
 # Build up the data frame
 
@@ -63,7 +63,7 @@ for(i in 1:nsp){ # loop over species
   }
   }
 
-summary(lm(bb ~ (warm+photo)^2, data = fake)) # sanity check 
+summary(lm(bb ~ (warm+photo)^2, data = fake)) # sanity check. No interaction
 
 save(list=c("fake"), file = "Fake_Budburst_ind2.RData")
 

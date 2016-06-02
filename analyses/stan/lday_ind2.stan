@@ -1,11 +1,11 @@
 // flynn@fas.harvard.edu
-// 3 level model for leafout day (lday) as a function for now of just warming and photoperiod. 
+// 3 level model for leafout day (lday) as a function of warming and photoperiod treatments, each 2 levels. 
 // based off of previous model, pooling just a species level for warming, photoperiod, and chilling effects, and off of "Three-level nested linear model in Stan": 
 // http://rstudio-pubs-static.s3.amazonaws.com/64315_bc3a395edd104095a8384db8d9952f43.html
 // Difference in this model is that we are not just doing "beta_0" intercept as in the other model, but also slopes. I call intercept "a" and slopes "b".
-// Top level: Species
-// 2nd level: Individuals (10 per species per site; site not used in this version).
-// 3rd level: Cuttings (8 per individual, spread out across different treatments)
+// Top level: Species (20)
+// 2nd level: Individual trees (10 per species).
+// 3rd level: Cuttings (4 per individual tree, spread out across different treatments)
 
 data {
   int<lower=1> N;
@@ -13,7 +13,7 @@ data {
   int<lower=1> n_sp;
   int<lower=1, upper=n_sp> sp[N];
   int<lower=1, upper=n_ind> ind[N]; // this serves also as individual-level cluster id
-  vector[N] lday; // response
+  vector[N] y; // response, day of budburst or leafout
   vector[N] warm; // predictor
   vector[N] photo; // predictor
 
@@ -60,7 +60,7 @@ transformed parameters {
 	// Species level. Random intercept (a) and slopes for warming and photoperiod
 	for (k in 1:n_sp) {
 		
-		a_sp[k] <- a_0 + mu_a_sp[k];
+		a_sp[k] <- a_0 + mu_a_sp[k]; // a_0 should end up ~ 35, getting 65 days instead!
 		b_warm_sp[k] <- b_warm_0 + mu_b_warm_sp[k];
 		b_photo_sp[k] <- b_photo_0 + mu_b_photo_sp[k];
 				
@@ -87,11 +87,11 @@ transformed parameters {
 
 model {
 	mu_a_sp ~ normal(0, sigma_a_sp);
-	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 100 = 3 months on either side. Narrow down to 35
+	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 
 	mu_b_photo_sp ~ normal(0, sigma_b_photo_sp);
 
 	mu_a_sp_ind ~ normal(0, sigma_a_sp_ind);
-	mu_b_warm_sp_ind ~ normal(0, sigma_b_warm_sp_ind); // ~ 10 d on either side at individual level
+	mu_b_warm_sp_ind ~ normal(0, sigma_b_warm_sp_ind); // 
 	mu_b_photo_sp_ind ~ normal(0, sigma_b_photo_sp_ind);
 
 	sigma_a_sp ~ normal(0, 20); 
@@ -102,5 +102,5 @@ model {
 	sigma_b_warm_sp_ind ~ normal(0, 10); 
 	sigma_b_photo_sp_ind ~ normal(0, 10); 
 
-	lday ~ normal(y_hat, sigma_y);
+	y ~ normal(y_hat, sigma_y);
 }
