@@ -19,24 +19,29 @@ splookup <- unique(fake[c("ind","sp")])[,"sp"] #200 long = 10 ind x 20 sp
 # To Stan!
 
 datalist.f <- with(fake, 
- list(lday = bb, # budburst as respose 
-                   warm = as.numeric(warm), 
-                   site = as.numeric(site),
-                   sp = as.numeric(sp), 
-                   ind = as.numeric(ind),
-                   photo = as.numeric(photo), 
-                   N = nrow(fake), 
-                   splookup = splookup,
-                   n_sp = length(unique(sp)),
-                   n_ind = length(unique(ind))
-                   )
+ list(lday = bb, 
+        warm = as.numeric(warm), 
+        photo = as.numeric(photo),
+        chill1 = as.numeric(chill1), 
+        chill2 = as.numeric(chill2),
+        site = as.numeric(site),
+        sp = as.numeric(sp),
+        ind = as.numeric(ind),
+        N = nrow(fake),
+        splookup = splookup,
+        n_sp = length(unique(sp)),
+        n_ind = length(unique(ind))
+        )
 )
 if(dostan){
-  doym.f <- stan('stan/lday_ind2.stan', data = datalist.f, 
-                 iter = 5005
+  doym.f <- stan('stan/lday_ind5.stan', data = datalist.f, 
+                 iter = 2002
                   ) 
+  sf <- summary(doym.f)$summary
   
-  savestan("Fake ind interax 2")
+  ssm.f <- as.shinystan(doym.f)
+  
+  savestan("Fake ind")
 }
 
 # Load lastest fake data output. Grep for both Fake and Stan Output.
@@ -47,10 +52,32 @@ if(!exists('doym.f')){
   load(sort(dir()[fakes], T)[1])
 }
 
-sf <- summary(doym.f)$summary
-
-ssm.f <- as.shinystan(doym.f)
 launch_shinystan(ssm.f) 
+
+sf[grep("^a_sp_ind\\[", rownames(sf)),] # Was centered on 35 in fake data, why now 65?
+sf[grep("^a_sp\\[", rownames(sf)),] # Was centered on 35 in fake data, why now 65?
+sf[grep("^a_0", rownames(sf)),] # 61 is center
+
+sf[grep("^b_warm_sp\\[", rownames(sf)),] # -16.8 each sp
+sf[grep("^b_warm_0", rownames(sf)),] # -1.6 overall. Sum with species level to re-capture -19
+sf[grep("^mu_b_warm_sp\\[", rownames(sf)),] # 0
+
+sf[grep("^b_photo_sp\\[", rownames(sf)),] # -17.1 each sp
+sf[grep("^b_photo_0", rownames(sf)),] # -1.7 overall. Sum with species level, -19.8, but only put in -14!
+
+sf[grep("^b_site_sp\\[", rownames(sf)),] # 1 each sp
+sf[grep("^b_site_0", rownames(sf)),] # 0.8 overall. Sum with species level, 1.8, put in 2, ok
+
+sf[grep("^b_chill1_sp\\[", rownames(sf)),] # -15.5 each sp
+sf[grep("^b_chill1_0", rownames(sf)),] # -1.5 overall. Sum with species level, -17, should be -20
+
+
+sf[grep("^b_chill2_sp\\[", rownames(sf)),] # -15.5 each sp
+sf[grep("^b_chill2_0", rownames(sf)),] # -1.5 overall. Sum with species level, -17, should be -20
+
+sf[grep("^b_inter_wp_sp\\[", rownames(sf)),] # 3.4, right on
+sf[grep("^b_inter_wp_0", rownames(sf)),] # 3.4 also! overall. Don't sum with species level, -19.8, but only put in -14!
+
 
 plot(sf['b_warm_0','mean'], sf['b_photo_0','mean'])
 
@@ -61,13 +88,12 @@ plotlet("b_warm_sp", "b_photo_sp",
         #ylab = "Advance due to 30d 1.5° chilling", 
         dat = sf)
 
-
 plot(density(sf[grep("^a_sp\\[", rownames(sf)),'mean']),
-     main = "Species level intercepts")
+     main = "Species level intercepts",
+     col = "midnightblue")
 
-plot(density(sf[grep("^a_sp_ind\\[", rownames(sf)),'mean']),
-     main = "Ind level intercepts")
-
+lines(density(sf[grep("^a_sp_ind\\[", rownames(sf)),'mean']),
+     col = "darkred")
 
 plotlet("mu_b_warm_sp", "mu_b_photo_sp", 
         dat = sf)
@@ -136,7 +162,7 @@ warmphoto.sd = sf[grep("^b_inter_wp_0", rownames(sf)),'sd']
 mm <- model.matrix(~(site+warm+photo)^2, data.frame(warm, photo))
 
 ############ !
-spint <- sf[grep("^a_sp\\[", rownames(sf)),'mean'] # Was centered on 35 in fake data, why now 70??
+spint <- sf[grep("^a_sp\\[", rownames(sf)),'mean'] # Was centered on 35 in fake data, why now 61?
 
 poster <- vector() # to hold the posterior predictive checks
 

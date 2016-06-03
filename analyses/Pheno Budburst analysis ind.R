@@ -5,7 +5,6 @@ runstan = T # set to T to actually run stan models. F if loading from previous r
 
 library(xtable)
 library(ggplot2)
-library(png) # readPNG for Fig 1
 
 setwd("~/Documents/git/treetraits/analyses")
 
@@ -37,8 +36,6 @@ load(file.path("input", toload))
 if(forlatex) figpath = "../docs/ms/images" else figpath = "graphs"
 
 # Prep 
-
-
 levels(dx$warm) = c(0,1); levels(dx$photo) = c(0, 1); levels(dx$site) = 1:2; 
 levels(dx$chill) = 1:3
 dx$warm <- as.numeric(dx$warm)
@@ -142,8 +139,8 @@ if(runstan){
                      sp = spn, 
                      ind = ind,
                      photo = photo, 
-#                      chill1 = chill1,
-#                      chill2 = chill2,
+                    chill1 = chill1,
+                    chill2 = chill2,
                      N = nrow(dxb), 
                      splookup = splookup,
                      n_site = length(unique(site)), 
@@ -151,13 +148,12 @@ if(runstan){
                      n_ind = length(unique(ind))
   ))
 
-    doym.b <- stan('stan/lday_ind3.stan', 
-                 data = datalist.b, iter = 2002, chains = 4
+    doym.b <- stan('stan/lday_ind5.stan', 
+                 data = datalist.b, iter = 4004, chains = 4
 #                  , control = list(adapt_delta = 0.9,
 #                                 max_treedepth = 15)
                       ) 
 
-  
 }
   sumerb <- summary(doym.b)$summary
   sumerb[grep("mu_", rownames(sumerb)),]
