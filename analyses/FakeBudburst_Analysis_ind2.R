@@ -28,15 +28,17 @@ datalist.f <- with(fake,
                    )
 )
 
-doym.f <- stan('stan/lday_ind2.stan', data = datalist.f, 
-                 iter = 5005,
-               control = list(adapt_delta = 0.9,
-                              max_treedepth = 15)) 
+doym.f <- stan('stan/lday_ind2_indint_simple.stan', data = datalist.f, 
+                 iter = 2002
+#                ,
+#                control = list(adapt_delta = 0.9,
+#                               max_treedepth = 15)
+               ) 
 
-sf <- summary(doym.f)$summary
-
-ssm.f <- as.shinystan(doym.f)
-launch_shinystan(ssm.f) 
+  sf <- summary(doym.f)$summary
+  
+  ssm.f <- as.shinystan(doym.f)
+  launch_shinystan(ssm.f) 
 
 # savestan("Fake Small for GG") # using function to save stan objects for later
 

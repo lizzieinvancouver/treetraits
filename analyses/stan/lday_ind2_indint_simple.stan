@@ -26,19 +26,12 @@ parameters {
   real b_warm_0; // overall warming effect
   real b_photo_0; // overall photoperiod effect  
 
-  real mu_a_0;
-  real mu_b_warm_0;
-  real mu_b_photo_0;
-    
   real mu_a_sp[n_sp];
   real mu_b_warm_sp[n_sp]; 
   real mu_b_photo_sp[n_sp];
 
   real mu_a_sp_ind[n_ind]; 
 
-  real<lower=0> sigma_a_0; 
-  real<lower=0> sigma_b_warm_0; 
-  real<lower=0> sigma_b_photo_0;
 
   real<lower=0> sigma_a_sp; 
   real<lower=0> sigma_b_warm_sp; 
@@ -86,9 +79,9 @@ transformed parameters {
 }
 
 model {
-	a_0 ~ normal(mu_a_0, sigma_a_0);
-	b_warm_0 ~ normal(mu_b_warm_0, sigma_b_warm_0);
-	b_photo_0 ~ normal(mu_b_photo_0, sigma_b_photo_0);
+	a_0 ~ normal(0, 100);
+	b_warm_0 ~ normal(0, 100);
+	b_photo_0 ~ normal(0, 100);
 		
 	mu_a_sp ~ normal(0, sigma_a_sp);
 	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 
