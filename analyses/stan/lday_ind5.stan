@@ -175,6 +175,21 @@ transformed parameters {
 	}
 
 model {
+	a_0 ~ normal(0, 100); // ~~ 26 for budburst, 37 for leafout
+	b_warm_0 ~ normal(0, 100);
+	b_photo_0 ~ normal(0, 100);
+	b_chill1_0 ~ normal(0, 100);
+	b_chill2_0 ~ normal(0, 100);
+	b_inter_wp_0 ~ normal(0, 100);
+  	b_inter_ws_0 ~ normal(0, 100);
+  	b_inter_ps_0 ~ normal(0, 100);
+ 	b_inter_wc1_0 ~ normal(0, 100);
+  	b_inter_wc2_0 ~ normal(0, 100);
+  	b_inter_pc1_0 ~ normal(0, 100);
+  	b_inter_pc2_0 ~ normal(0, 100);
+  	b_inter_sc1_0 ~ normal(0, 100);
+  	b_inter_sc2_0 ~ normal(0, 100) ;
+  	
 	mu_a_sp ~ normal(0, sigma_a_sp); // 20 d on either site at sp level
 	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); 
 	mu_b_photo_sp ~ normal(0, sigma_b_photo_sp);

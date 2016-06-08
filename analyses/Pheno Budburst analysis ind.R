@@ -45,10 +45,10 @@ dt$wd <- with(dt, Stem.mass / Stem.volume)
 # Pheno Prep 
 levels(dx$warm) = c(0,1); levels(dx$photo) = c(0, 1); levels(dx$site) = 1:2; 
 levels(dx$chill) = 1:3
-dx$warm <- as.numeric(dx$warm)
-dx$photo <- as.numeric(dx$photo)
+dx$warm <- as.numeric(dx$warm) - 1 # to set to 0 / 1
+dx$photo <- as.numeric(dx$photo) - 1
 dx$chill <- as.numeric(dx$chill)
-dx$site <- as.numeric(dx$site)
+dx$site <- as.numeric(dx$site) - 1 # 0 / 1 
 
 dx <- dx[!is.na(dx$site),]
 
@@ -67,84 +67,27 @@ dxl$spn <- as.numeric(dxl$sp)
 dxl$ind <- as.numeric(as.factor(as.character(dxl$ind)))
 
 # Trait prep
+levels(dt$Site) = c(3, 1, 4, 2)
 
-dt$site <- as.numeric(dt$Site)
+dt$site <- as.numeric(as.character(dt$Site)) - 1  # start at 0
 
 dt <- dt[!is.na(dt$Latitude),]
 
 dts <- dt[!is.na(dt$sla),]
-dts$spn <- as.numeric(dts$Species)
+dts$spn <- as.numeric(as.factor(as.character(dts$Species)))
 dts$ind <- as.numeric(as.factor(as.character(dts$Individual)))
 
-dtw <- dt[!is.na(dt$lday),]
-dtw$spn <- as.numeric(dtw$Species)
+dtw <- dt[!is.na(dt$wd),]
+dtw$spn <- as.numeric(as.factor(as.character(dtw$Species)))
 dtw$ind <- as.numeric(as.factor(as.character(dtw$Individual)))
 
-# <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
-# Utility function to plot 'random effects' from stan output - used now mostly in Fig 3.
-plotlet <- function(x, y, xlab=NULL, ylab=NULL, data, groups = NULL, ...){
-  if(is.null(xlab)) xlab = x; if(is.null(ylab)) ylab = y
-  if(is.null(groups)) { col.pch = "black"; col.lines = "grey50" }
-    else {
-      colz = c("brown", "blue3")
-      ccolz = rep(colz[1], length(groups))
-      ccolz[groups == 2] = colz[2]
-      col.pch = ccolz
-      col.lines = alpha(ccolz, 0.4)
-    }
-  
-  plot(
-  data[grep(paste(x,"\\[",sep=""), rownames(data)),1],
-  data[grep(paste(y,"\\[",sep=""), rownames(data)),1],
-  pch = "+",
-  ylab = ylab,
-  xlab = xlab,
-  col = col.pch,
-  ...
-  )
-
-  abline(h=0, lty = 3, col = "grey60")
-  abline(v=0, lty = 3, col = "grey60")
-  
-  arrows(
-    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"],
-    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"]-data[grep(paste(y,"\\[",sep=""), rownames(data)),"se_mean"],
-    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"],
-    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"]+data[grep(paste(y,"\\[",sep=""), rownames(data)),"se_mean"],
-    length = 0, col = col.lines)
-  
-  arrows(
-    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"]-data[grep(paste(x,"\\[",sep=""), rownames(data)),"se_mean"],
-    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"],
-    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"]+data[grep(paste(x,"\\[",sep=""), rownames(data)),"se_mean"],
-    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"],
-    length = 0, col = col.lines)
-  
-  # match with species names
-  text( data[grep(paste(x,"\\[",sep=""), rownames(data)),1],
-        data[grep(paste(y,"\\[",sep=""), rownames(data)),1],
-        sort(unique(dx$sp)),
-        cex = 0.5, 
-        pos = 3,
-        col = col.pch)
-}
-
-# Groups
-colz = c("brown", "blue3")
-
-shrubs = c("VIBLAN","RHAFRA","RHOPRI","SPIALB","VACMYR","VIBCAS", "AROMEL","ILEMUC", "KALANG", "LONCAN", "LYOLIG")
-trees = c("ACEPEN", "ACERUB", "ACESAC", "ALNINC", "BETALL", "BETLEN", "BETPAP", "CORCOR", "FAGGRA", "FRANIG", "HAMVIR", "NYSSYL", "POPGRA", "PRUPEN", "QUEALB" , "QUERUB", "QUEVEL")
-
-treeshrub = levels(dx$sp)
-treeshrub[treeshrub %in% shrubs] = 1
-treeshrub[treeshrub %in% trees] = 2
-treeshrub = as.numeric(treeshrub)
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
 # Analyses:
 # 1. Day of budburst by all factors, stan - using individual level model
 # 2. Day of leaf out by all factors, stan - using individual level model
-
+# 3. SLA by latitude
+# 4. WD by latitude
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
 # 1. Budburst day. 
@@ -167,7 +110,7 @@ if(runstan){
   ))
 
     doym.b <- stan('stan/lday_ind5.stan', 
-                 data = datalist.b, iter = 4004, chains = 4
+                 data = datalist.b, iter = 5005, chains = 4
 #                  , control = list(adapt_delta = 0.9,
 #                                 max_treedepth = 15)
                       ) 
@@ -277,7 +220,7 @@ if(runstan){
   
   
   latm.s <- stan('stan/trait_ind.stan', 
-                 data = datalist.s, iter = 2002, chains = 4
+                 data = datalist.s, iter = 5005, chains = 4
                  #                  , control = list(adapt_delta = 0.9,
                  #                                 max_treedepth = 15)
   ) 
@@ -354,3 +297,66 @@ pairs(dxt[c("bday","lday","wd","sla","X.N","Pore.anatomy")],
 dev.off() #; system(paste("open", file.path(figpath, "traitpairs.pdf"), "-a /Applications/Preview.app"))
 
 on.exit(setwd("~/Documents/git/buds/docs/ms/"))
+
+
+
+
+# <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
+# Utility function to plot 'random effects' from stan output - used now mostly in Fig 3.
+plotlet <- function(x, y, xlab=NULL, ylab=NULL, data, groups = NULL, ...){
+  if(is.null(xlab)) xlab = x; if(is.null(ylab)) ylab = y
+  if(is.null(groups)) { col.pch = "black"; col.lines = "grey50" }
+  else {
+    colz = c("brown", "blue3")
+    ccolz = rep(colz[1], length(groups))
+    ccolz[groups == 2] = colz[2]
+    col.pch = ccolz
+    col.lines = alpha(ccolz, 0.4)
+  }
+  
+  plot(
+    data[grep(paste(x,"\\[",sep=""), rownames(data)),1],
+    data[grep(paste(y,"\\[",sep=""), rownames(data)),1],
+    pch = "+",
+    ylab = ylab,
+    xlab = xlab,
+    col = col.pch,
+    ...
+  )
+  
+  abline(h=0, lty = 3, col = "grey60")
+  abline(v=0, lty = 3, col = "grey60")
+  
+  arrows(
+    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"],
+    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"]-data[grep(paste(y,"\\[",sep=""), rownames(data)),"se_mean"],
+    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"],
+    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"]+data[grep(paste(y,"\\[",sep=""), rownames(data)),"se_mean"],
+    length = 0, col = col.lines)
+  
+  arrows(
+    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"]-data[grep(paste(x,"\\[",sep=""), rownames(data)),"se_mean"],
+    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"],
+    data[grep(paste(x,"\\[",sep=""), rownames(data)),"mean"]+data[grep(paste(x,"\\[",sep=""), rownames(data)),"se_mean"],
+    data[grep(paste(y,"\\[",sep=""), rownames(data)),"mean"],
+    length = 0, col = col.lines)
+  
+  # match with species names
+  text( data[grep(paste(x,"\\[",sep=""), rownames(data)),1],
+        data[grep(paste(y,"\\[",sep=""), rownames(data)),1],
+        sort(unique(dx$sp)),
+        cex = 0.5, 
+        pos = 3,
+        col = col.pch)
+}
+
+# Groups
+colz = c("brown", "blue3")
+
+shrubs = c("VIBLAN","RHAFRA","RHOPRI","SPIALB","VACMYR","VIBCAS", "AROMEL","ILEMUC", "KALANG", "LONCAN", "LYOLIG")
+trees = c("ACEPEN", "ACERUB", "ACESAC", "ALNINC", "BETALL", "BETLEN", "BETPAP", "CORCOR", "FAGGRA", "FRANIG", "HAMVIR", "NYSSYL", "POPGRA", "PRUPEN", "QUEALB" , "QUERUB", "QUEVEL")
+
+treeshrub = levels(dx$sp)
+treeshrub[treeshrub %in% shrubs] = 1
+treeshrub[treeshrub %in% trees] = 2
+treeshrub = as.numeric(treeshrub)

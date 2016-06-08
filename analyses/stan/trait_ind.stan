@@ -1,4 +1,4 @@
-
+// Trait analysis at individual level, using similar structure as the phenology model, lday_ind5.stan.
 
 data {
   int<lower=0> N;
@@ -11,7 +11,7 @@ data {
   vector[N] y; // response
   vector[N] lat; // predictor
 
-	int<lower=1> splookup[n_ind]; // will this work if unbalanced?
+	int<lower=1> splookup[n_ind]; 
 		
 	}
 
@@ -19,15 +19,19 @@ parameters {
 
   real a_0;
   real b_lat_0;
-
+  real b_site_0;
+  
   real mu_a_sp[n_sp]; 
   real mu_a_sp_ind[n_ind];  
   real mu_b_lat_sp[n_sp]; 
-
-  real<lower=0> sigma_b_lat_sp; // 
-  real<lower=0> sigma_b_lat_sp_ind; // 
+  real mu_b_site_sp[n_sp]; 
+  
+  real<lower=0> sigma_a_sp;
+  real<lower=0> sigma_a_sp_ind;
+  real<lower=0> sigma_b_lat_sp; 
+  real<lower=0> sigma_b_site_sp; 
     
-  real<lower=0> sigma_y; // this only gets used in model block
+  real<lower=0> sigma_y; // 
   }
 
 
@@ -35,7 +39,8 @@ transformed parameters {
 	real y_hat[N];
 	real a_sp[n_sp]; // intercept for species
   	real b_lat_sp[n_sp]; // 
-
+  	real b_site_sp[n_sp]; //
+  	
 	real a_sp_ind[n_ind]; // intercept for individuals within species
 	
 			
@@ -43,6 +48,8 @@ transformed parameters {
 	for (k in 1:n_sp) {
 		a_sp[k] <- a_0 + mu_a_sp[k]; 
 		b_lat_sp[k] <- b_lat_0 + mu_b_lat_sp[k];
+		b_site_sp[k] <- b_site_0 + mu_b_site_sp[k];
+
 				
 		}
 	
@@ -57,18 +64,28 @@ transformed parameters {
 	for(i in 1:N){
 
 		y_hat[i] <- a_sp_ind[ind[i]] + 
-					b_lat_sp[sp[i]] * lat[i]
+					b_lat_sp[sp[i]] * lat[i] +
+					b_site_sp[sp[i]] * site[i] 
 					;		
 		}
 	
 }
 
 model {
-	mu_b_lat_sp ~ normal(0, 35); // 100 = 3 months on either side. Narrow down to 35
+	a_0 ~ normal(0, 100); // 
+	b_lat_0 ~ normal(0, 100); // 
+	b_site_0 ~ normal(0, 100); // 
 
-	sigma_b_lat_sp ~ normal(0, 10); // Start big at 10, go smaller if introduces problems
-			
-	b_lat_sp ~ normal(mu_b_lat_sp, sigma_b_lat_sp);
+	mu_a_sp ~ normal(0, 10); // 
+	mu_a_sp_ind ~ normal(0, 10); // 
+	mu_b_lat_sp ~ normal(0, 35); // 
+	mu_b_site_sp ~ normal(0, 35); // 
 
+	sigma_a_sp ~ normal(0, 10); //
+	sigma_a_sp_ind ~ normal(0, 10); //
+	sigma_b_lat_sp ~ normal(0, 10); //
+	sigma_b_site_sp ~ normal(0, 10); //
+	
 	y ~ normal(y_hat, sigma_y);
+	
 }
