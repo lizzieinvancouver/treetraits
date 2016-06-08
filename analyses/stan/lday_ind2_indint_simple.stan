@@ -65,7 +65,6 @@ transformed parameters {
 	
 	for (j in 1:n_ind){
 		a_sp_ind[j] <- a_sp[splookup[j]] + mu_a_sp_ind[j];
-	
 	}
 	
 	// cutting (branch) level. 
@@ -79,7 +78,7 @@ transformed parameters {
 }
 
 model {
-	a_0 ~ normal(0, 100);
+	a_0 ~ normal(35, 100);
 	b_warm_0 ~ normal(0, 100);
 	b_photo_0 ~ normal(0, 100);
 		
