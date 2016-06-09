@@ -28,7 +28,6 @@ if(runstan){ # things needed only if running the stan models
 }
 
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> 
-
 (toload <- sort(dir("./input")[grep("Budburst Data", dir('./input'))], T)[1])
 
 load(file.path("input", toload))
@@ -69,7 +68,7 @@ dxl$ind <- as.numeric(as.factor(as.character(dxl$ind)))
 # Trait prep
 levels(dt$Site) = c(3, 1, 4, 2)
 
-dt$site <- as.numeric(as.character(dt$Site)) - 1  # start at 0
+dt$site <- as.numeric(as.character(dt$Site))   # start at 0
 
 dt <- dt[!is.na(dt$Latitude),]
 
@@ -128,13 +127,13 @@ col4table <- c("mean","sd","25%","50%","75%","Rhat")
 
 # manually to get right order
 params <- c("b_warm_0","b_photo_0",
-            #"b_chill1_0","b_chill2_0",
+            "b_chill1_0","b_chill2_0",
             "b_site_0",
                "b_inter_wp_0",
-#                "b_inter_wc1_0","b_inter_wc2_0",
-#                "b_inter_pc1_0","b_inter_pc2_0",
-               "b_inter_ws_0","b_inter_ps_0"
-               # "b_inter_sc1_0","b_inter_sc2"
+                "b_inter_wc1_0","b_inter_wc2_0",
+                "b_inter_pc1_0","b_inter_pc2_0",
+               "b_inter_ws_0","b_inter_ps_0",
+                "b_inter_sc1_0","b_inter_sc2"
 )
 
 meanzb <- sumerb[params,col4table]
@@ -156,7 +155,7 @@ rownames(meanzb) = c("Temperature",
 #                     "Site x Chilling 1.5°C"
                     )
 
-if(runstan){
+#if(runstan){
   splookup <- unique(dxl[c("ind","spn")])[,"spn"] #265 long
   
   datalist.l <- with(dxl, list(lday = lday, # budburst as response 
@@ -165,8 +164,8 @@ if(runstan){
                                sp = spn, 
                                ind = ind,
                                photo = photo, 
-                               #                      chill1 = chill1,
-                               #                      chill2 = chill2,
+                                chill1 = chill1,
+                                chill2 = chill2,
                                N = nrow(dxl), 
                                splookup = splookup,
                                n_site = length(unique(site)), 
@@ -176,13 +175,15 @@ if(runstan){
   
   
   
-  doym.l <- stan('stan/lday_ind2.stan', 
+  doym.l <- stan('stan/lday_ind5.stan', 
                  data = datalist.l, iter = 5005, chains = 4
                  #                  , control = list(adapt_delta = 0.9,
                  #                                 max_treedepth = 15)
   ) 
-}
+
 sumerl <- summary(doym.l)$summary
+
+savestan("Ind Models")
 
 # ssm.l <- as.shinystan(doym.l)
 # yl = dxl$lday # for shinystan posterior checks
@@ -224,10 +225,37 @@ if(runstan){
                  #                  , control = list(adapt_delta = 0.9,
                  #                                 max_treedepth = 15)
   ) 
-}
-slat <- summary(latm.s)$summary
+  
+  splookup <- unique(dtw[c("ind","spn")])[,"spn"] #265 long
+  
+  datalist.w <- with(dtw, list(y = wd, # SLA
+                               lat = as.numeric(Latitude),
+                               site = site, 
+                               sp = spn, 
+                               ind = ind,
+                               N = nrow(dtw), 
+                               splookup = splookup,
+                               n_site = length(unique(site)), 
+                               n_sp = length(unique(spn)),
+                               n_ind = length(unique(ind))
+  ))
+  
+  
+  
+  latm.w <- stan('stan/trait_ind.stan', 
+                 data = datalist.w, iter = 5005, chains = 4
+                 #                  , control = list(adapt_delta = 0.9,
+                 #                                 max_treedepth = 15)
+  ) 
 
-launch_shinystan(latm.s)
+slat <- summary(latm.s)$summary
+wlat <- summary(latm.w)$summary
+
+savestan("Trait Models")
+launch_shinystan(latm.s) # decreasing SLA with latitude; 
+
+launch_shinystan(latm.w) # Very bad fit with wood density, why?
+
 
 
 
@@ -235,68 +263,19 @@ launch_shinystan(latm.s)
 # warm, photo, chill1, chill2 vs. day of lo and day of bb
 
 #bb, warm
-bwarm <- sumerb[grep(paste("b_warm","\\[",sep=""), rownames(sumerb)),1]
-bphoto <- sumerb[grep(paste("b_photo","\\[",sep=""), rownames(sumerb)),1]
-bchill1 <- sumerb[grep(paste("b_chill1","\\[",sep=""), rownames(sumerb)),1]
+blat.s <- slat[grep(paste("^b_lat_sp","\\[",sep=""), rownames(slat)),1]
+blat.w <- wlat[grep(paste("^b_lat_sp","\\[",sep=""), rownames(wlat)),1]
 
-lwarm <- sumerl[grep(paste("b_warm","\\[",sep=""), rownames(sumerl)),1]
-lphoto <- sumerl[grep(paste("b_photo","\\[",sep=""), rownames(sumerl)),1]
-lchill1 <- sumerl[grep(paste("b_chill1","\\[",sep=""), rownames(sumerl)),1]
 
 pdf(file.path(figpath, "Sens_vs_day.pdf"), width = 9, height = 7)
 
-par(mfrow=c(2,3))
-plot(adv$overallb, bwarm, ylab = "Warming sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of budburst")
-legend("top", legend="Budburst", text.font=2, inset = 0.05, bty ="n", cex = 2)
-plot(adv$overallb, bphoto, ylab = "Photoperiod sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of budburst")
-plot(adv$overallb, bchill1, #ylim = c(-30, -10), 
-     ylab = "Chilling sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of budburst")
-
-plot(adv$overall, lwarm, ylab = "Warming sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of leafout")
-legend("top", legend="Leafout", text.font=2, inset = 0.05, bty ="n", cex = 2)
-plot(adv$overall, lphoto, ylab = "Photoperiod sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of leafout")
-plot(adv$overall, lchill1, #  ylim = c(-30, -10), 
-     ylab = "Chilling sensitivity", pch = 16, cex = 2, col = alpha("grey20", 0.6), xlab = "Day of leafout")
-
-dev.off();#system(paste("open", file.path(figpath, "Sens_vs_day.pdf"), "-a /Applications/Preview.app"))
-
-####### Trait pairs plot
-
-panel.hist <- function(x, ...) {
-  usr <- par("usr"); on.exit(par(usr))
-  par(usr = c(usr[1:2], 0, 1.5) )
-  h <- hist(x, plot = FALSE)
-  breaks <- h$breaks; nB <- length(breaks)
-  y <- h$counts; y <- y/max(y)
-  rect(breaks[-nB], 0, breaks[-1], y, #col="darkblue",
-       ...) }
-
-panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...){
-  usr <- par("usr"); on.exit(par(usr))
-  par(usr = c(0, 1, 0, 1))
-  r <- cor(x, y, use = "complete.obs")
-  txt <- format(c(r, 0.123456789), digits=digits)[1]
-  txt <- paste(prefix, txt, sep="")
-  rsig <- cor.test(x, y, use = "complete.obs")$p.value 
+plot(blat.s, blat.w)
   
-  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
-  if(rsig <= 0.05) {    text(0.5, 0.5, txt, cex = 1, font=2)}
-  else text(0.5, 0.5, txt, cex = 1, font=1)
-}
 
-pdf(file.path(figpath, "traitpairs.pdf"), width = 6, height = 6)
-pairs(dxt[c("bday","lday","wd","sla","X.N","Pore.anatomy")],
-      diag.panel = panel.hist, lower.panel = panel.cor,
-      col = hsv(0.7,0.2,0.1,alpha = 0.1), pch = 16,
-      labels = c("Budburst day","Leafout day","Stem density", "SLA", "Leaf N","Pore anatomy"),
-      cex = 1.5,
-      cex.labels = 1, oma = rep(2,4),
-      font.labels = 2,
-      gap = 0.5
-)
-dev.off() #; system(paste("open", file.path(figpath, "traitpairs.pdf"), "-a /Applications/Preview.app"))
 
-on.exit(setwd("~/Documents/git/buds/docs/ms/"))
+
+
+on.exit(setwd("~/Documents/git/treetraits/docs/ms/"))
 
 
 
