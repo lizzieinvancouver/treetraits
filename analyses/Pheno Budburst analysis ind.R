@@ -32,6 +32,7 @@ if(runstan){ # things needed only if running the stan models
 
 load(file.path("input", toload))
 
+
 if(forlatex) figpath = "../docs/ms/images" else figpath = "graphs"
 
 # trait data
