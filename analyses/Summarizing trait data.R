@@ -1,6 +1,6 @@
 # Compiled tree traits
 setwd("~/Documents/git/treetraits/")
-d <- read.csv("Summer 2015 Tree Traits.csv")
+d <- read.csv("analyses/input/Summer 2015 Tree Traits.csv")
 
 length(unique(d$Species))
 

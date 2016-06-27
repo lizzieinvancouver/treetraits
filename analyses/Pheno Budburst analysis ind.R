@@ -32,7 +32,6 @@ if(runstan){ # things needed only if running the stan models
 
 load(file.path("input", toload))
 
-
 if(forlatex) figpath = "../docs/ms/images" else figpath = "graphs"
 
 # trait data
@@ -69,7 +68,7 @@ dxl$ind <- as.numeric(as.factor(as.character(dxl$ind)))
 # Trait prep
 levels(dt$Site) = c(3, 1, 4, 2)
 
-dt$site <- as.numeric(as.character(dt$Site))   # start at 0
+dt$site <- as.numeric(as.character(dt$Site))   # start at 1
 
 dt <- dt[!is.na(dt$Latitude),]
 
@@ -91,7 +90,7 @@ dtw$ind <- as.numeric(as.factor(as.character(dtw$Individual)))
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
 # 1. Budburst day. 
-if(runstan){
+#if(runstan){
   splookup <- unique(dxb[c("ind","spn")])[,"spn"] #271 long for budburst
   
   datalist.b <- with(dxb, list(lday = bday, # budburst as response 
@@ -111,11 +110,11 @@ if(runstan){
 
     doym.b <- stan('stan/lday_ind5.stan', 
                  data = datalist.b, iter = 5005, chains = 4
-#                  , control = list(adapt_delta = 0.9,
-#                                 max_treedepth = 15)
+                  , control = list(adapt_delta = 0.9,
+                                 max_treedepth = 15)
                       ) 
 
-}
+#}
   sumerb <- summary(doym.b)$summary
   sumerb[grep("mu_", rownames(sumerb)),]
   
@@ -178,13 +177,17 @@ rownames(meanzb) = c("Temperature",
   
   doym.l <- stan('stan/lday_ind5.stan', 
                  data = datalist.l, iter = 5005, chains = 4
-                 #                  , control = list(adapt_delta = 0.9,
-                 #                                 max_treedepth = 15)
+                                   , control = list(adapt_delta = 0.9,
+                                                  max_treedepth = 15)
   ) 
 
 sumerl <- summary(doym.l)$summary
 
+setwd("/Volumes/WeldShare/Wolkovich Lab/Dan")
+
 savestan("Ind Models")
+
+
 
 # ssm.l <- as.shinystan(doym.l)
 # yl = dxl$lday # for shinystan posterior checks
