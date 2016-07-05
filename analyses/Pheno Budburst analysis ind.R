@@ -1,10 +1,12 @@
 forlatex = F # set to F if just trying new figures, T if outputting for final
-runstan = T # set to T to actually run stan models. F if loading from previous runs
+runstan = F # set to T to actually run stan models. F if loading from previous runs
 
 # Analysis of budburst experiment 2015, at individual level. 
 
 library(xtable)
 library(ggplot2)
+library(rstan)
+library(shinystan)
 
 setwd("~/Documents/git/treetraits/analyses")
 
@@ -20,8 +22,7 @@ if(!runstan) {
 }
 
 if(runstan){ # things needed only if running the stan models
-  library(rstan)
-  library(shinystan) 
+   
   rstan_options(auto_write = TRUE)
   options(mc.cores = parallel::detectCores())
   source('stan/savestan.R')
@@ -81,6 +82,30 @@ dtw <- dt[!is.na(dt$wd),]
 dtw$spn <- as.numeric(as.factor(as.character(dtw$Species)))
 dtw$ind <- as.numeric(as.factor(as.character(dtw$Individual)))
 
+# height
+dth <- dt[!is.na(dt$Height),]
+dth$spn <- as.numeric(as.factor(as.character(dth$Species)))
+dth$ind <- as.numeric(as.factor(as.character(dth$Individual)))
+
+# dbh
+dbh <- cbind(as.character(dt$DBH), 
+              as.character(dt$DBH.2), 
+              as.character(dt$DBH.3), 
+              as.character(dt$DBH.4), 
+              as.character(dt$DBH.5))
+
+dbh[dbh=="<1"] = 1
+dbhsum <- unlist(lapply(
+  apply(dbh, 1, function(x) strsplit(x,",")),
+  function(x) sum(as.numeric(unlist(x)))))
+dbhsum[dbhsum==0] = NA
+dt$dbhsum = dbhsum
+
+dtd <- dt[!is.na(dt$dbhsum),]
+dtd$spn <- as.numeric(as.factor(as.character(dtd$Species)))
+dtd$ind <- as.numeric(as.factor(as.character(dtd$Individual)))
+
+
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 
 # Analyses:
@@ -116,7 +141,7 @@ if(runstan){
                       ) 
 
 }
-  sumerb <- summary(doym.b)$summary
+  sumerb <- summary(doym.l)$summary
   sumerb[grep("mu_", rownames(sumerb)),]
   
   #ssm.b <- as.shinystan(doym.b)
@@ -134,7 +159,7 @@ params <- c("b_warm_0","b_photo_0",
                 "b_inter_wc1_0","b_inter_wc2_0",
                 "b_inter_pc1_0","b_inter_pc2_0",
                "b_inter_ws_0","b_inter_ps_0",
-                "b_inter_sc1_0","b_inter_sc2"
+                "b_inter_sc1_0","b_inter_sc2_0"
 )
 
 meanzb <- sumerb[params,col4table]
@@ -249,8 +274,61 @@ if(runstan){
                  #                                 max_treedepth = 15)
   ) 
 
+  
+  
+  #height
+  splookup <- unique(dth[c("ind","spn")])[,"spn"] #265 long
+  
+  datalist.h <- with(dth, list(y = Height, # Height
+                               lat = as.numeric(Latitude),
+                               site = site, 
+                               sp = spn, 
+                               ind = ind,
+                               N = nrow(dth), 
+                               splookup = splookup,
+                               n_site = length(unique(site)), 
+                               n_sp = length(unique(spn)),
+                               n_ind = length(unique(ind))
+  ))
+  
+  
+  
+  latm.h <- stan('stan/trait_ind.stan', 
+                 data = datalist.h, iter = 5005, chains = 4
+                 #                  , control = list(adapt_delta = 0.9,
+                 #                                 max_treedepth = 15)
+  ) 
+  
+  # dbh
+  
+  splookup <- unique(dtd[c("ind","spn")])[,"spn"] #265 long
+  
+  datalist.d <- with(dtd, list(y = dbhsum, # DBH
+                               lat = as.numeric(Latitude),
+                               site = site, 
+                               sp = spn, 
+                               ind = ind,
+                               N = nrow(dtd), 
+                               splookup = splookup,
+                               n_site = length(unique(site)), 
+                               n_sp = length(unique(spn)),
+                               n_ind = length(unique(ind))
+  ))
+  
+  
+  
+  latm.d <- stan('stan/trait_ind.stan', 
+                 data = datalist.d, iter = 5005, chains = 4
+                 #                  , control = list(adapt_delta = 0.9,
+                 #                                 max_treedepth = 15)
+  ) 
+  
+  
+  
+  
 slat <- summary(latm.s)$summary
 wlat <- summary(latm.w)$summary
+
 
 savestan("Trait Models")
 launch_shinystan(latm.s) # decreasing SLA with latitude; 
