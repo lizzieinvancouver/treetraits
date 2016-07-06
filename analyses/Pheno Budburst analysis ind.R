@@ -1,5 +1,5 @@
-forlatex = F # set to F if just trying new figures, T if outputting for final
-runstan = F # set to T to actually run stan models. F if loading from previous runs
+forlatex = FALSE # set to FALSE if just trying new figures, T if outputting for final
+runstan = TRUE # set to TRUE to actually run stan models. F if loading from previous runs
 
 # Analysis of budburst experiment 2015, at individual level. 
 
@@ -9,6 +9,13 @@ library(rstan)
 library(shinystan)
 
 setwd("~/Documents/git/treetraits/analyses")
+# setwd('~/Documents/git/projects/treegarden/traits/analyses')
+
+# Notes for Lizzie:
+# my R GUI (R.app) hates the multicore. (I cannot fully understand why.)
+# Two ways to fix this:
+# (1) Better way: Run the below code in terminal, it's super fast!
+# (2) Lame way, can turn off options(mc.cores = parallel::detectCores()) and wait 5,000 years for runs
 
 # <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <> <>
 # get latest .Rdata file
