@@ -144,15 +144,9 @@ dtd$ind <- as.numeric(as.factor(as.character(dtd$Individual)))
                  data = datalist.b, iter = 5005, chains = 4
                   , control = list(adapt_delta = 0.9,
                                  max_treedepth = 15)
-                      ) 
+                      )
 
-<<<<<<< HEAD
-}
-  sumerb <- summary(doym.l)$summary
-=======
-#}
   sumerb <- summary(doym.b)$summary
->>>>>>> origin/master
   sumerb[grep("mu_", rownames(sumerb)),]
   
   #ssm.b <- as.shinystan(doym.b)
