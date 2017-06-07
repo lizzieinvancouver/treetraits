@@ -55,7 +55,7 @@ transformed parameters {
 	// Species level. Random intercept (a) and slopes for warming and photoperiod
 	for (k in 1:n_sp) {
 		
-		a_sp[k] <- a_0 + mu_a_sp[k]; // a_0 should end up ~ 35, getting 65 days instead!
+		a_sp[k] <- a_0 + mu_a_sp[k]; // 
 		b_warm_sp[k] <- b_warm_0 + mu_b_warm_sp[k];
 		b_photo_sp[k] <- b_photo_0 + mu_b_photo_sp[k];
 				
@@ -78,8 +78,8 @@ transformed parameters {
 }
 
 model {
-	a_0 ~ normal(35, 100);
-	b_warm_0 ~ normal(0, 100);
+	a_0 ~ normal(35, 100); // possibly reduce sigmas down... to 1 (perhaps according to andrew). With fewer observations, consider stronger prior
+	b_warm_0 ~ normal(0, 100); 
 	b_photo_0 ~ normal(0, 100);
 		
 	mu_a_sp ~ normal(0, sigma_a_sp);

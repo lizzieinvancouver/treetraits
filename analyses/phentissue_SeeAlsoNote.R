@@ -1,11 +1,22 @@
 ### Started 2 February 2016 ###
 ### By Lizzie ### 
 
-## Quick look at responses of species we collected tissue for genotyping from ## 
+## Quick look at responses of species we collected tissue for genotyping from ##
+
+## Updated 13 July 2016 by Lizzie to make it run! Before I realized there is another
+# file in the budgenetics repo by the same name that runs fine  ...
+
+## So, important note, SEE ALSO file here:
+## https://github.com/lizzieinvancouver/budgenetics/tree/master/analyses ##
+## before editing or worrying about this! ##
 
 ## housekeeping
 rm(list=ls()) 
 options(stringsAsFactors = FALSE)
+
+## packages
+library(plyr)
+library(dplyr)
 
 setwd("~/Documents/git/projects/treegarden/budburstexp2015/analyses")
 
@@ -24,7 +35,7 @@ lx <- dx[dx$nl == 1,]
 summary(lx)
 
 ##
-setwd("~/Documents/git/projects/treegarden/genotypes")
+setwd("~/Documents/git/projects/treegarden/genetics/analyses")
 
 
 ## get the tissue individuals
