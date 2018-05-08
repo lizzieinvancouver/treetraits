@@ -63,6 +63,12 @@ transformed parameters {
 	for (k in 1:n_sp) {
 		
 		a_sp[k] <- a_0 + mu_a_sp[k]; // a_0 should end up ~ 35, getting 65 days instead!
+             // Lizzie notes for above: 
+             // (1) could perhaps better think of mu_a_sp as deviation_a_sp (deviation from a_0)
+             // If you wanted to unpool the intercepts (as we do in some models, NOT this one)
+             // you would write: a_sp[k] <- a_0[k] and  ... 
+             // when you define a_0 above you would change to: vector[K] a_0; 
+
 		b_warm_sp[k] <- b_warm_0 + mu_b_warm_sp[k];
 		b_photo_sp[k] <- b_photo_0 + mu_b_photo_sp[k];
 				
@@ -86,16 +92,18 @@ transformed parameters {
 }
 
 model {
+        // Below three are main effects so they are expected to have non-zero values
 	a_0 ~ normal(mu_a_0, sigma_a_0);
 	b_warm_0 ~ normal(mu_b_warm_0, sigma_b_warm_0);
 	b_photo_0 ~ normal(mu_b_photo_0, sigma_b_photo_0);
-		
+	
+        // These (below) are all modeled deviations around main effects and thus must be centered at zero!	
 	mu_a_sp ~ normal(0, sigma_a_sp);
-	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); // 
+	mu_b_warm_sp ~ normal(0, sigma_b_warm_sp); 
 	mu_b_photo_sp ~ normal(0, sigma_b_photo_sp);
-
 	mu_a_sp_ind ~ normal(0, sigma_a_sp_ind);
 
+        // These are sigmas, they are always centered around zero
 	sigma_a_sp ~ normal(0, 20); 
 	sigma_b_warm_sp ~ normal(0, 20); 
 	sigma_b_photo_sp ~ normal(0, 20); 
